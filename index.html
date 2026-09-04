@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>房仲 Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap">
+<style>
+/* ============ 8-BIT TOKENS ============ */
+:root{
+  --ground:#141230;
+  --ground-2:#0d0b21;
+  --panel:#241f52;
+  --panel-2:#2e2867;
+  --line:#5b4fd6;
+  --line-dark:#0a0820;
+  --ink:#f2edff;
+  --ink-dim:#9d94d8;
+  --gold:#ffc73d;
+  --exp:#3fd07f;
+  --exp-dark:#1c7d4a;
+  --hp:#ff5c72;
+  --sky:#4fd6ff;
+  --plum:#c56bff;
+  --shadow:#08061a;
+  --font-px:'Press Start 2P','Courier New',monospace;
+  --font-cjk:'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground-2);
+  color:var(--ink);
+  font-family:var(--font-px),var(--font-cjk);
+  font-size:14px;
+  line-height:1.9;
+  -webkit-font-smoothing:none;
+  image-rendering:pixelated;
+  padding-bottom:96px;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:90;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.20) 0 1px,rgba(0,0,0,0) 1px 3px);
+  mix-blend-mode:multiply;
+}
+::selection{background:var(--gold);color:var(--line-dark)}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* chamfered pixel panel */
+.px{
+  background:var(--panel);
+  border:4px solid var(--line);
+  box-shadow:0 6px 0 0 var(--shadow), inset 0 0 0 2px var(--line-dark);
+  clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);
+}
+.lat{font-family:var(--font-px);letter-spacing:.5px}
+.tab-num{font-variant-numeric:tabular-nums}
+
+/* ============ HUD ============ */
+header.hud{
+  position:sticky;top:0;z-index:60;
+  background:linear-gradient(180deg,#1b1740 0%,#141230 100%);
+  border-bottom:4px solid var(--line);
+  box-shadow:0 6px 0 0 var(--shadow);
+  padding:12px 14px 14px;
+}
+.hud-inner{max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand h1{
+  margin:0;font-family:var(--font-px);font-size:15px;line-height:1.5;color:var(--gold);
+  text-shadow:3px 3px 0 var(--line-dark);letter-spacing:1px;
+}
+.brand .sub{font-family:var(--font-cjk);font-size:11px;color:var(--ink-dim);font-weight:700;letter-spacing:2px}
+.brand .spacer{flex:1}
+.se-btn{
+  background:var(--panel);border:3px solid var(--line);color:var(--ink-dim);
+  font-family:var(--font-px);font-size:8px;padding:6px 8px;cursor:pointer;
+}
+.se-btn[data-on="1"]{color:var(--exp);border-color:var(--exp-dark)}
+
+.charrow{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}
+.avatar{
+  width:56px;height:56px;flex:none;background:var(--ground);
+  border:3px solid var(--line);display:grid;place-items:center;
+  box-shadow:inset 0 0 0 2px var(--line-dark);
+}
+.avatar canvas{width:40px;height:40px;image-rendering:pixelated}
+.charfields{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px}
+.lbl{font-family:var(--font-px);font-size:8px;color:var(--ink-dim);letter-spacing:1px}
+.name-in{
+  width:100%;background:var(--ground);border:3px solid var(--line);
+  padding:8px 10px;font-family:var(--font-cjk);font-weight:900;font-size:15px;color:var(--gold);
+  box-shadow:inset 0 0 0 2px var(--line-dark);
+}
+.name-in::placeholder{color:#5d55a0;font-weight:700}
+
+.lvrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lv{
+  font-family:var(--font-px);font-size:11px;color:var(--ground-2);
+  background:var(--gold);padding:5px 8px;border:3px solid #a87c00;
+}
+.expbar{
+  flex:1;min-width:180px;height:24px;background:var(--ground-2);
+  border:3px solid var(--line);box-shadow:inset 0 0 0 2px var(--line-dark);
+  position:relative;overflow:hidden;
+}
+.expfill{
+  height:100%;width:0;
+  background:
+    repeating-linear-gradient(90deg,var(--exp) 0 10px,#35b46d 10px 12px);
+  border-right:2px solid #d9ffe9;
+  transition:width .45s steps(12,end);
+}
+.expbar .pct{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--font-px);font-size:9px;color:#fff;text-shadow:2px 2px 0 var(--line-dark);
+}
+.totexp{font-family:var(--font-px);font-size:8px;color:var(--ink-dim)}
+
+/* ============ LAYOUT ============ */
+main{max-width:920px;margin:0 auto;padding:16px 14px 8px}
+.view{display:none;flex-direction:column;gap:14px}
+.view.on{display:flex;animation:pop .18s steps(3,end)}
+@keyframes pop{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .view.on{animation:none}
+  .expfill{transition:none}
+}
+
+.panel{padding:14px}
+.panel-head{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;
+  border-bottom:3px dashed #443b8f;padding-bottom:10px;
+}
+.panel-head h2{
+  margin:0;font-family:var(--font-cjk);font-weight:900;font-size:17px;letter-spacing:3px;color:var(--ink);
+}
+.panel-head .tag{font-family:var(--font-px);font-size:8px;color:var(--sky);letter-spacing:1px}
+.panel-head .spacer{flex:1}
+
+.btn{
+  background:var(--gold);color:#2b1c00;border:3px solid #a87c00;
+  font-family:var(--font-cjk);font-weight:900;font-size:13px;letter-spacing:1px;
+  padding:8px 14px;cursor:pointer;box-shadow:0 4px 0 0 #6b4f00;
+}
+.btn:active{transform:translateY(4px);box-shadow:none}
+.btn.alt{background:var(--sky);border-color:#1a7fa3;box-shadow:0 4px 0 0 #0d536b;color:#032332}
+.btn.ghost{background:var(--panel-2);color:var(--ink);border-color:var(--line);box-shadow:0 4px 0 0 var(--shadow)}
+.btn.danger{background:var(--hp);border-color:#a32233;box-shadow:0 4px 0 0 #661320;color:#2b0007}
+.btn.sm{font-size:11px;padding:5px 9px;box-shadow:0 3px 0 0 var(--shadow)}
+
+.empty{
+  text-align:center;padding:26px 12px;color:var(--ink-dim);
+  font-family:var(--font-cjk);font-weight:700;font-size:13px;letter-spacing:1px;
+  border:3px dashed #443b8f;
+}
+.empty .big{font-family:var(--font-px);font-size:11px;color:var(--plum);display:block;margin-bottom:10px}
+
+/* ============ TASK CARD ============ */
+.list{display:flex;flex-direction:column;gap:12px}
+.card{
+  background:var(--panel-2);border:3px solid var(--line);
+  box-shadow:0 4px 0 0 var(--shadow);padding:12px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.card.done{border-color:var(--exp-dark);background:#1e3a2c}
+.card-top{display:flex;gap:10px;align-items:flex-start}
+.chk{
+  flex:none;width:30px;height:30px;background:var(--ground-2);
+  border:3px solid var(--line);cursor:pointer;display:grid;place-items:center;
+  font-family:var(--font-px);font-size:14px;color:var(--exp);
+}
+.card.done .chk{background:var(--exp);color:#04220f;border-color:#0f5c33}
+.card-title{flex:1;min-width:0}
+.card-title .t{
+  font-family:var(--font-cjk);font-weight:900;font-size:16px;letter-spacing:1px;
+  word-break:break-word;
+}
+.card.done .card-title .t{text-decoration:line-through;color:#9fe8bd}
+.metarow{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{
+  font-family:var(--font-cjk);font-weight:700;font-size:11px;letter-spacing:1px;
+  padding:3px 7px;border:2px solid var(--line);color:var(--ink-dim);background:var(--ground);
+}
+.chip.gold{color:var(--gold);border-color:#8a670a}
+.chip.sky{color:var(--sky);border-color:#1a7fa3}
+.chip.plum{color:var(--plum);border-color:#7b3ab5}
+.chip.sample{color:#ffb0bd;border-color:#a32233}
+.desc{
+  font-family:var(--font-cjk);font-weight:400;font-size:13px;line-height:1.85;
+  color:#cfc7ff;white-space:pre-wrap;word-break:break-word;
+}
+.fieldrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mini-lbl{font-family:var(--font-cjk);font-weight:700;font-size:11px;color:var(--ink-dim);letter-spacing:1px}
+.in{
+  background:var(--ground);border:3px solid var(--line);padding:6px 8px;
+  font-family:var(--font-cjk);font-weight:700;font-size:13px;color:var(--ink);
+  box-shadow:inset 0 0 0 2px var(--line-dark);min-width:0;
+}
+.in:disabled{opacity:.5}
+.in.num{width:90px;text-align:center;font-variant-numeric:tabular-nums}
+.in.grow{flex:1;min-width:140px}
+.qtybox{display:flex;align-items:center;gap:6px}
+.qtybar{height:12px;background:var(--ground-2);border:2px solid var(--line);flex:1;min-width:80px;overflow:hidden}
+.qtybar i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--sky) 0 6px,#2ba3cc 6px 8px)}
+.cardfoot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ============ FORM / MODAL ============ */
+.overlay{
+  position:fixed;inset:0;z-index:80;background:rgba(6,4,20,.86);
+  display:none;padding:20px 14px;overflow-y:auto;
+}
+.overlay.on{display:block}
+.modal{max-width:560px;margin:0 auto;padding:16px}
+.modal h3{
+  margin:0 0 12px;font-family:var(--font-cjk);font-weight:900;font-size:16px;
+  letter-spacing:3px;color:var(--gold);border-bottom:3px dashed #443b8f;padding-bottom:10px;
+}
+.f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.f > label{font-family:var(--font-cjk);font-weight:700;font-size:12px;letter-spacing:1px;color:var(--ink-dim)}
+.f .req{color:var(--hp)}
+.f input,.f textarea,.f select{
+  background:var(--ground);border:3px solid var(--line);padding:8px 10px;width:100%;
+  font-family:var(--font-cjk);font-weight:700;font-size:14px;color:var(--ink);
+  box-shadow:inset 0 0 0 2px var(--line-dark);
+}
+.f textarea{min-height:74px;line-height:1.8;font-weight:400;resize:vertical}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radio{
+  flex:1;min-width:120px;cursor:pointer;border:3px solid var(--line);background:var(--ground);
+  padding:9px;text-align:center;font-family:var(--font-cjk);font-weight:900;font-size:13px;letter-spacing:1px;
+}
+.radio input{display:none}
+.radio.sel{background:var(--gold);color:#2b1c00;border-color:#a87c00}
+.two{display:flex;gap:10px;flex-wrap:wrap}
+.two > *{flex:1;min-width:160px}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+.err{color:var(--hp);font-family:var(--font-cjk);font-weight:700;font-size:12px;min-height:18px}
+
+/* ============ SKILLS ============ */
+.skilltabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.stab{
+  flex:1;min-width:110px;cursor:pointer;background:var(--ground);border:3px solid var(--line);
+  padding:10px 6px;font-family:var(--font-cjk);font-weight:900;font-size:13px;letter-spacing:1px;
+  color:var(--ink-dim);box-shadow:0 4px 0 0 var(--shadow);
+}
+.stab.on{background:var(--plum);color:#1a0530;border-color:#7b3ab5}
+.stab .n{display:block;font-family:var(--font-px);font-size:8px;margin-top:4px}
+.kv{display:flex;gap:8px;align-items:flex-start}
+.kv .k{
+  flex:none;width:82px;font-family:var(--font-cjk);font-weight:900;font-size:11px;
+  letter-spacing:1px;color:var(--sky);padding-top:2px;
+}
+.kv .v{flex:1;min-width:0}
+
+/* ============ NOTES ============ */
+.toolbar{display:flex;gap:5px;flex-wrap:wrap;padding:8px;background:var(--ground);border:3px solid var(--line);border-bottom:none}
+.tb{
+  background:var(--panel-2);border:2px solid var(--line);color:var(--ink);
+  padding:5px 9px;cursor:pointer;font-family:var(--font-cjk);font-weight:900;font-size:13px;min-width:34px;
+}
+.tb:hover{background:var(--plum);color:#1a0530}
+.tb.b{font-weight:900}.tb.i{font-style:italic}.tb.u{text-decoration:underline}.tb.s{text-decoration:line-through}
+.tb select{background:var(--panel-2);border:none;color:var(--ink);font-size:12px;font-weight:700}
+.editor{
+  background:var(--ground);border:3px solid var(--line);min-height:150px;padding:12px;
+  font-family:var(--font-cjk);font-weight:400;font-size:15px;line-height:1.9;
+  box-shadow:inset 0 0 0 2px var(--line-dark);overflow-wrap:break-word;
+}
+.editor:empty::before{content:attr(data-ph);color:#5d55a0}
+.note{border-left:8px solid var(--plum)}
+.note .body{font-family:var(--font-cjk);font-weight:400;font-size:14px;line-height:1.9;color:#e2dcff;overflow-wrap:break-word}
+.note .body u{text-underline-offset:3px}
+
+/* ============ CALENDAR ============ */
+.calhead{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:10px}
+.calhead .m{font-family:var(--font-px);font-size:13px;color:var(--gold);letter-spacing:1px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dow{
+  text-align:center;font-family:var(--font-px);font-size:8px;color:var(--ink-dim);padding:4px 0;
+}
+.day{
+  aspect-ratio:1/1;background:var(--ground);border:2px solid #3a3280;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  cursor:default;padding:2px;
+}
+.day.blank{background:transparent;border-color:transparent}
+.day .d{font-family:var(--font-px);font-size:9px;color:var(--ink-dim)}
+.day.has{cursor:pointer;border-color:var(--exp-dark);background:#17301f}
+.day.has .d{color:var(--ink)}
+.day .cnt{
+  font-family:var(--font-px);font-size:8px;color:#04220f;background:var(--exp);
+  padding:1px 4px;line-height:1.4;
+}
+.day.today{box-shadow:0 0 0 3px var(--gold)}
+.day.sel{background:var(--gold);border-color:#a87c00}
+.day.sel .d{color:#2b1c00}
+.daylist{margin-top:14px;border-top:3px dashed #443b8f;padding-top:12px}
+.daylist h4{
+  margin:0 0 10px;font-family:var(--font-cjk);font-weight:900;font-size:14px;letter-spacing:2px;color:var(--gold);
+}
+.rec{
+  background:var(--panel-2);border:3px solid var(--exp-dark);padding:10px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.stat{
+  flex:1;min-width:96px;background:var(--ground);border:3px solid var(--line);padding:9px;text-align:center;
+}
+.stat .v{font-family:var(--font-px);font-size:15px;color:var(--gold);display:block;line-height:1.7}
+.stat .k{font-family:var(--font-cjk);font-weight:700;font-size:11px;color:var(--ink-dim);letter-spacing:1px}
+
+/* ============ BOTTOM NAV ============ */
+nav.bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  background:linear-gradient(180deg,#1b1740,#0d0b21);
+  border-top:4px solid var(--line);box-shadow:0 -6px 0 0 var(--shadow);
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));
+}
+.bar-inner{max-width:920px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.nav{
+  background:var(--panel);border:3px solid var(--line);cursor:pointer;
+  padding:7px 2px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--ink-dim);box-shadow:0 4px 0 0 var(--shadow);
+}
+.nav .ico{width:22px;height:22px;image-rendering:pixelated}
+.nav .cap{font-family:var(--font-cjk);font-weight:900;font-size:11px;letter-spacing:.5px;white-space:nowrap}
+.nav.on{background:var(--gold);border-color:#a87c00;color:#2b1c00;transform:translateY(2px);box-shadow:0 2px 0 0 var(--shadow)}
+.nav.home{background:var(--panel-2)}
+.nav.home.on{background:var(--gold)}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:110px;z-index:95;
+  background:var(--exp);color:#04220f;border:3px solid #0f5c33;
+  padding:9px 14px;font-family:var(--font-cjk);font-weight:900;font-size:13px;letter-spacing:1px;
+  box-shadow:0 4px 0 0 var(--shadow);display:none;
+}
+#toast.lv{background:var(--gold);border-color:#a87c00;color:#2b1c00}
+#toast.on{display:block;animation:tin .2s steps(3,end)}
+@keyframes tin{from{transform:translateX(-50%) translateY(10px)}to{transform:translateX(-50%)}}
+
+@media (max-width:520px){
+  .brand h1{font-size:12px}
+  .nav .cap{font-size:10px}
+  .panel-head h2{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<header class="hud">
+  <div class="hud-inner">
+    <div class="brand">
+      <h1>FANG&nbsp;ZHONG&nbsp;ONLINE</h1>
+      <span class="sub">房仲 Online ‧ 左營戰區</span>
+      <span class="spacer"></span>
+      <button class="se-btn" id="seBtn" data-on="1" title="音效開關">SE ON</button>
+    </div>
+    <div class="charrow">
+      <div class="avatar"><canvas id="ava" width="20" height="20"></canvas></div>
+      <div class="charfields">
+        <span class="lbl">PLAYER NAME　角色名稱</span>
+        <input class="name-in" id="pname" maxlength="16" placeholder="輸入你的角色名稱…" autocomplete="off">
+      </div>
+    </div>
+    <div class="lvrow">
+      <span class="lv tab-num" id="lv">LV.1</span>
+      <div class="expbar" role="progressbar" aria-label="經驗值" aria-valuemin="0" aria-valuemax="100" id="bar">
+        <div class="expfill" id="fill"></div>
+        <span class="pct tab-num" id="pct">0%</span>
+      </div>
+      <span class="totexp tab-num" id="tot">TOTAL 0%</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ 首頁 ============ -->
+  <section class="view on" id="v-home">
+    <div class="px panel">
+      <div class="panel-head">
+        <h2>每日任務</h2>
+        <span class="tag" id="taskTag">0 / 0 CLEARED</span>
+        <span class="spacer"></span>
+        <button class="btn sm ghost" id="clearSample" style="display:none">清除範例資料</button>
+        <button class="btn" id="addTask">＋ 新增任務</button>
+      </div>
+      <div class="list" id="taskList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 經驗教訓 ============ -->
+  <section class="view" id="v-lesson">
+    <div class="px panel">
+      <div class="panel-head">
+        <h2>經驗教訓</h2>
+        <span class="tag">+10% EXP / 每則</span>
+        <span class="spacer"></span>
+        <button class="btn alt" id="addLesson">＋ 新增教訓</button>
+      </div>
+      <div class="list" id="lessonList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 技能欄 ============ -->
+  <section class="view" id="v-skill">
+    <div class="px panel">
+      <div class="panel-head">
+        <h2>技能欄</h2>
+        <span class="tag" id="skillTag">0 SKILLS</span>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="addSkill">＋ 新增技能</button>
+      </div>
+      <div class="skilltabs" id="skillTabs"></div>
+      <div class="list" id="skillList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 記事本 ============ -->
+  <section class="view" id="v-note">
+    <div class="px panel">
+      <div class="panel-head">
+        <h2>記事本</h2>
+        <span class="tag" id="noteTag">0 NOTES</span>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="newNote">＋ 新增記事</button>
+      </div>
+      <div id="noteEditorWrap" style="display:none">
+        <div class="f">
+          <label>標題</label>
+          <input id="noteTitle" placeholder="例：屋主開價心理筆記" autocomplete="off">
+        </div>
+        <div class="f">
+          <label>內文</label>
+          <div class="toolbar">
+            <button class="tb b" data-cmd="bold" title="粗體">B</button>
+            <button class="tb i" data-cmd="italic" title="斜體">I</button>
+            <button class="tb u" data-cmd="underline" title="底線">U</button>
+            <button class="tb s" data-cmd="strikeThrough" title="刪除線">S</button>
+            <button class="tb" data-cmd="insertUnorderedList" title="項目符號">•</button>
+            <span class="tb" style="padding:2px 6px">字級
+              <select id="fsize">
+                <option value="2">小</option>
+                <option value="3" selected>中</option>
+                <option value="5">大</option>
+                <option value="7">特大</option>
+              </select>
+            </span>
+            <span class="tb" style="padding:2px 6px">顏色
+              <select id="fcolor">
+                <option value="#f2edff">白</option>
+                <option value="#ffc73d">金</option>
+                <option value="#3fd07f">綠</option>
+                <option value="#ff5c72">紅</option>
+                <option value="#4fd6ff">藍</option>
+              </select>
+            </span>
+            <button class="tb" data-cmd="removeFormat" title="清除格式">✕</button>
+          </div>
+          <div class="editor" id="noteBody" contenteditable="true" data-ph="在這裡輸入內容…可用上方按鈕調整樣式"></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn ghost" id="cancelNote">取消</button>
+          <button class="btn" id="saveNote">儲存記事</button>
+        </div>
+      </div>
+      <div class="list" id="noteList" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ============ 已完成任務 ============ -->
+  <section class="view" id="v-done">
+    <div class="px panel">
+      <div class="panel-head">
+        <h2>已完成任務</h2>
+        <span class="tag" id="doneTag">0 CLEARED</span>
+      </div>
+      <div class="stats" id="doneStats"></div>
+      <div class="calhead">
+        <button class="btn sm ghost" id="prevM">◀</button>
+        <span class="m tab-num" id="calM">2026 / 09</span>
+        <button class="btn sm ghost" id="nextM">▶</button>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="daylist" id="dayList"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bar">
+  <div class="bar-inner">
+    <button class="nav" data-v="lesson"><canvas class="ico" width="10" height="10" data-ico="book"></canvas><span class="cap">經驗教訓</span></button>
+    <button class="nav" data-v="skill"><canvas class="ico" width="10" height="10" data-ico="sword"></canvas><span class="cap">技能欄</span></button>
+    <button class="nav home on" data-v="home"><canvas class="ico" width="10" height="10" data-ico="home"></canvas><span class="cap">首頁</span></button>
+    <button class="nav" data-v="note"><canvas class="ico" width="10" height="10" data-ico="note"></canvas><span class="cap">記事本</span></button>
+    <button class="nav" data-v="done"><canvas class="ico" width="10" height="10" data-ico="flag"></canvas><span class="cap">已完成</span></button>
+  </div>
+</nav>
+
+<div class="overlay" id="ov"><div class="px modal" id="modal"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ========================================================================
+   房仲 Online — state
+======================================================================== */
+const KEY='fangzhong-online-v1';
+const CATS=[{id:'dev',name:'開發相關'},{id:'sale',name:'銷售相關'},{id:'deal',name:'買賣過程'}];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const todayStr=()=>fmtD(new Date());
+function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function cleanHTML(h){
+  const d=document.createElement('div');d.innerHTML=String(h||'');
+  d.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(n=>n.remove());
+  d.querySelectorAll('*').forEach(n=>{
+    [...n.attributes].forEach(a=>{
+      const an=a.name.toLowerCase();
+      if(an.startsWith('on')||(an==='href'&&/^javascript:/i.test(a.value))||an==='src') n.removeAttribute(a.name);
+    });
+  });
+  return d.innerHTML;
+}
+
+let S=null, sound=true, skillCat='dev', editingNote=null, calRef=new Date(), selDay=todayStr();
+
+function seed(){
+  const t=new Date(), d=fmtD(t);
+  const y=new Date(t.getTime()-86400000), yd=fmtD(y);
+  return {
+    player:{name:'',exp:0},
+    tasks:[
+      {id:uid(),sample:1,name:'開發陌生電訪',type:'daily',start:'',end:'',content:'左營區屋主名單，優先撥打屋齡 20 年以上的華廈。',target:20,expPct:8,doneDates:[],qty:{},reason:'',progress:''},
+      {id:uid(),sample:1,name:'社區掃街 ‧ 明誠路一帶',type:'daily',start:'',end:'',content:'發送社區行情表，記錄有意願屋主的門牌與時段。',target:3,expPct:6,doneDates:[yd],qty:{[yd]:3},reason:'',progress:''},
+      {id:uid(),sample:1,name:'完成 A 案成交報告書',type:'range',start:d+'T09:00',end:d+'T18:00',content:'含實價登錄比對、周邊成交案例三筆、貸款試算。',target:0,expPct:15,doneDates:[],qty:{},reason:'',progress:''}
+    ],
+    lessons:[
+      {id:uid(),sample:1,text:'屋主說「再想想」通常不是價格問題，而是還沒被說服「現在賣」的理由。下次直接補上近三個月同社區成交趨勢。',date:yd,source:'B 案帶看後檢討'}
+    ],
+    skills:{
+      dev:[{id:uid(),sample:1,name:'謄本速讀',desc:'三分鐘看完建物與土地謄本，抓出設定、查封、共有人。',note:'注意他項權利部的設定金額，回推屋主貸款餘額。',from:'公司內訓 + 地政士請教'}],
+      sale:[{id:uid(),sample:1,name:'帶看動線設計',desc:'先看缺點再看優點，最後停在採光最好的位置談價。',note:'避開下午西曬時段帶看西向物件。',from:'資深前輩跟看'}],
+      deal:[{id:uid(),sample:1,name:'斡旋轉成交價金流程',desc:'收斡 → 議價 → 用印 → 完稅 → 交屋，各階段屋主與買方的款項與文件。',note:'土增稅自用稅率要先確認屋主設籍滿一年。',from:'第一次成交案實作'}]
+    },
+    notes:[{id:uid(),sample:1,title:'屋主開價心理筆記',html:'<b>開價高於行情 15% 以上</b>的屋主，多半是<u>沒有時間壓力</u>。<br>對策：先建立信任，每兩週回報一次帶看數據，讓市場說話。',ts:Date.now()}],
+    completed:[
+      {id:uid(),sample:1,taskId:'',name:'社區掃街 ‧ 明誠路一帶',date:yd,time:'18:20',expPct:6,actual:3,target:3,content:'發送社區行情表。'}
+    ]
+  };
+}
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);if(p&&p.player)return p;}}catch(e){}
+  return seed();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ========================= EXP ========================= */
+function lvOf(e){return Math.floor(e/100)+1;}
+function addExp(n,label){
+  const before=lvOf(S.player.exp);
+  S.player.exp=Math.max(0,Math.round((S.player.exp+n)*10)/10);
+  const after=lvOf(S.player.exp);
+  save();renderHUD();
+  if(n>0){
+    if(after>before){toast('LEVEL UP！ LV.'+after,true);blip(880);setTimeout(()=>blip(1320),110);setTimeout(()=>blip(1760),220);}
+    else{toast((label||'獲得經驗值')+' ＋'+n+'%');blip(660);setTimeout(()=>blip(990),80);}
+  }
+}
+function renderHUD(){
+  const e=S.player.exp, lv=lvOf(e), p=Math.round(e%100);
+  document.getElementById('lv').textContent='LV.'+lv;
+  document.getElementById('fill').style.width=p+'%';
+  document.getElementById('pct').textContent=p+'%';
+  document.getElementById('bar').setAttribute('aria-valuenow',p);
+  document.getElementById('tot').textContent='TOTAL '+(Math.round(e*10)/10)+'%';
+}
+
+/* ========================= sound / toast ========================= */
+let ac=null;
+function blip(f){
+  if(!sound)return;
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type='square';o.frequency.value=f;
+    g.gain.setValueAtTime(.05,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.12);
+    o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.13);
+  }catch(e){}
+}
+let tt=null;
+function toast(msg,lv){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='on'+(lv?' lv':'');
+  clearTimeout(tt);tt=setTimeout(()=>t.className='',1900);
+}
+
+/* ========================= pixel icons ========================= */
+const ICONS={
+  home:['..2222....','.222222...','2222222222','.2..22..2.','.2..22..2.','.2222222..','.2....2...','.2.11.2...','.2.11.2...','.222222...'],
+  book:['.22222222.','.2111111 2','.21 1 1 12','.2111111 2','.21 1 1 12','.2111111 2','.21 1 1 12','.2111111 2','.22222222.','..........'],
+  sword:['.......22.','......2112','.....2112.','....2112..','...2112...','..2112....','.22122....','2222......','.2.22.....','......22..'],
+  note:['.22222222.','.2111111 2','.2 1111 12','.21 11 112','.2111111 2','.21 1 1 12','.2111111 2','.2 1 1 1 2','.22222222.','..........'],
+  flag:['.2........','.2111112..','.2111112..','.2111112..','.2111112..','.2222222..','.2........','.2........','.2........','2222......']
+};
+function drawIcon(cv,name,fg,mid){
+  const g=cv.getContext('2d');const px=ICONS[name];g.clearRect(0,0,10,10);
+  for(let y=0;y<px.length;y++)for(let x=0;x<px[y].length;x++){
+    const c=px[y][x];if(c==='.'||c===' ')continue;
+    g.fillStyle=c==='2'?fg:mid;g.fillRect(x,y,1,1);
+  }
+}
+function paintNavIcons(){
+  document.querySelectorAll('.nav').forEach(n=>{
+    const cv=n.querySelector('canvas'),on=n.classList.contains('on');
+    drawIcon(cv,cv.dataset.ico,on?'#2b1c00':'#9d94d8',on?'#7a5a12':'#4a4290');
+  });
+}
+function paintAvatar(){
+  const cv=document.getElementById('ava'),g=cv.getContext('2d');
+  const P=[
+    '....222222....','...22222222...','..2233333322..','..2333333332..',
+    '..23f3333f32..','..2333333333..','..2333ee333 2.','..23333333 32.',
+    '...2333333 2..','....22bbbb22..','...2bbbbbbbb2.','..2bbbggbbbb2.',
+    '..2bbb ggbbb2.','..2bb bbbb bb2','...2 2bbbb2 2.','....2bbbbbb2..',
+    '....2bb22bb2..','....2b2..2b2..','....222..222..','..............'
+  ];
+  const C={'2':'#0a0820','3':'#ffd9a8','f':'#241f52','e':'#a8703c','b':'#3c68d6','g':'#ffc73d'};
+  g.clearRect(0,0,20,20);
+  for(let y=0;y<P.length;y++)for(let x=0;x<P[y].length;x++){
+    const c=P[y][x];if(!C[c])continue;g.fillStyle=C[c];g.fillRect(x+3,y,1,1);
+  }
+}
+
+/* ========================= modal ========================= */
+function openModal(html,onMount){
+  const ov=document.getElementById('ov'),m=document.getElementById('modal');
+  m.innerHTML=html;ov.classList.add('on');document.body.style.overflow='hidden';
+  if(onMount)onMount(m);
+  const first=m.querySelector('input,textarea,select');if(first)first.focus();
+}
+function closeModal(){
+  document.getElementById('ov').classList.remove('on');
+  document.getElementById('modal').innerHTML='';
+  document.body.style.overflow='';
+}
+document.getElementById('ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* ========================================================================
+   TASKS
+======================================================================== */
+function isDone(t){return t.type==='daily'?t.doneDates.includes(todayStr()):t.doneDates.length>0;}
+function taskTime(t){
+  if(t.type==='daily')return '每日';
+  const f=s=>s?s.replace('T',' ').slice(0,16):'—';
+  return f(t.start)+' ～ '+f(t.end);
+}
+function taskForm(edit){
+  const t=edit||{name:'',type:'daily',start:'',end:'',content:'',target:0,expPct:10};
+  return `
+  <h3>${edit?'編輯任務':'新增任務'}</h3>
+  <div class="f"><label>任務名稱 <span class="req">＊必填</span></label>
+    <input id="fName" maxlength="40" value="${esc(t.name)}" placeholder="例：開發陌生電訪"></div>
+  <div class="f"><label>任務時間 <span class="req">＊必填</span></label>
+    <div class="radios">
+      <label class="radio ${t.type==='daily'?'sel':''}" data-r="daily"><input type="radio" name="ttype" value="daily" ${t.type==='daily'?'checked':''}>每日</label>
+      <label class="radio ${t.type==='range'?'sel':''}" data-r="range"><input type="radio" name="ttype" value="range" ${t.type==='range'?'checked':''}>指定起訖時間</label>
+    </div>
+  </div>
+  <div class="two" id="rangeWrap" style="${t.type==='range'?'':'display:none'}">
+    <div class="f"><label>開始</label><input type="datetime-local" id="fStart" value="${esc(t.start)}"></div>
+    <div class="f"><label>結束</label><input type="datetime-local" id="fEnd" value="${esc(t.end)}"></div>
+  </div>
+  <div class="f"><label>任務內容</label>
+    <textarea id="fContent" placeholder="這個任務具體要做什麼？">${esc(t.content)}</textarea></div>
+  <div class="two">
+    <div class="f"><label>需達成數量（可留空）</label>
+      <input type="number" id="fTarget" min="0" step="1" value="${t.target||''}" placeholder="例：20"></div>
+    <div class="f"><label>完成可獲得經驗值 ％</label>
+      <input type="number" id="fExp" min="0" max="100" step="1" value="${t.expPct}"></div>
+  </div>
+  <div class="err" id="fErr"></div>
+  <div class="modal-foot">
+    <button class="btn ghost" data-act="close">取消</button>
+    <button class="btn" id="fSave">${edit?'儲存變更':'建立任務'}</button>
+  </div>`;
+}
+function mountTaskForm(m,edit){
+  m.querySelectorAll('.radio').forEach(r=>r.addEventListener('click',()=>{
+    m.querySelectorAll('.radio').forEach(x=>x.classList.remove('sel'));
+    r.classList.add('sel');
+    m.querySelector('#rangeWrap').style.display=r.dataset.r==='range'?'':'none';
+  }));
+  m.querySelector('[data-act="close"]').onclick=closeModal;
+  m.querySelector('#fSave').onclick=()=>{
+    const name=m.querySelector('#fName').value.trim();
+    const type=m.querySelector('.radio.sel').dataset.r;
+    const start=m.querySelector('#fStart').value,end=m.querySelector('#fEnd').value;
+    const err=m.querySelector('#fErr');
+    if(!name){err.textContent='請輸入任務名稱。';m.querySelector('#fName').focus();return;}
+    if(type==='range'&&(!start||!end)){err.textContent='選擇「指定起訖時間」時，開始與結束時間都要填。';return;}
+    if(type==='range'&&start>end){err.textContent='結束時間不能早於開始時間。';return;}
+    const data={
+      name,type,start:type==='range'?start:'',end:type==='range'?end:'',
+      content:m.querySelector('#fContent').value.trim(),
+      target:Math.max(0,parseInt(m.querySelector('#fTarget').value||'0',10)||0),
+      expPct:Math.max(0,Math.min(100,parseInt(m.querySelector('#fExp').value||'0',10)||0))
+    };
+    if(edit){Object.assign(edit,data);}
+    else{S.tasks.unshift(Object.assign({id:uid(),doneDates:[],qty:{},reason:'',progress:''},data));}
+    save();closeModal();renderTasks();blip(720);
+  };
+}
+function renderTasks(){
+  const wrap=document.getElementById('taskList');
+  const today=todayStr();
+  const done=S.tasks.filter(isDone).length;
+  document.getElementById('taskTag').textContent=done+' / '+S.tasks.length+' CLEARED';
+  if(!S.tasks.length){
+    wrap.innerHTML='<div class="empty"><span class="big">NO QUEST</span>還沒有任務。按右上角「＋ 新增任務」開始今天的行程。</div>';
+    return;
+  }
+  wrap.innerHTML=S.tasks.map(t=>{
+    const d=isDone(t);
+    const actual=t.type==='daily'?(t.qty[today]||''):(t.qty.once||'');
+    const pctQty=t.target?Math.min(100,Math.round((parseInt(actual||0,10)/t.target)*100)):0;
+    return `
+    <div class="card ${d?'done':''}" data-id="${t.id}">
+      <div class="card-top">
+        <button class="chk" data-act="toggle" aria-pressed="${d}" title="${d?'取消完成':'標記完成'}">${d?'✔':''}</button>
+        <div class="card-title">
+          <div class="t">${esc(t.name)}</div>
+          <div class="metarow">
+            <span class="chip sky">${esc(taskTime(t))}</span>
+            <span class="chip gold">EXP ＋${t.expPct}%</span>
+            ${t.target?`<span class="chip plum">目標 ${t.target}</span>`:''}
+            ${t.sample?'<span class="chip sample">範例</span>':''}
+          </div>
+        </div>
+      </div>
+      ${t.content?`<div class="desc">${esc(t.content)}</div>`:''}
+      ${t.target?`
+      <div class="fieldrow">
+        <span class="mini-lbl">實際完成數量</span>
+        <input class="in num" type="number" min="0" data-act="qty" value="${esc(actual)}" placeholder="0">
+        <span class="mini-lbl tab-num">/ ${t.target}</span>
+        <span class="qtybox" style="flex:1"><span class="qtybar"><i style="width:${pctQty}%"></i></span><span class="mini-lbl tab-num">${pctQty}%</span></span>
+      </div>`:''}
+      ${!d?`
+      <div class="fieldrow">
+        <span class="mini-lbl">未完成原因</span>
+        <input class="in grow" data-act="reason" value="${esc(t.reason)}" placeholder="例：屋主臨時取消">
+      </div>
+      <div class="fieldrow">
+        <span class="mini-lbl">目前進度</span>
+        <input class="in grow" data-act="progress" value="${esc(t.progress)}" placeholder="例：已聯繫 8 位，2 位願意約時間">
+      </div>`:''}
+      <div class="cardfoot">
+        <button class="btn sm ghost" data-act="edit">編輯</button>
+        <button class="btn sm danger" data-act="del">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('taskList').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-act]');if(!btn)return;
+  const card=e.target.closest('.card');const t=S.tasks.find(x=>x.id===card.dataset.id);if(!t)return;
+  const act=btn.dataset.act,today=todayStr();
+  if(act==='toggle'){
+    if(isDone(t)){
+      if(t.type==='daily')t.doneDates=t.doneDates.filter(d=>d!==today);
+      else t.doneDates=[];
+      const idx=S.completed.findIndex(r=>r.taskId===t.id&&(t.type==='daily'?r.date===today:true));
+      if(idx>-1)S.completed.splice(idx,1);
+      addExp(-t.expPct);toast('已取消完成 －'+t.expPct+'%');
+    }else{
+      const actual=t.type==='daily'?(t.qty[today]||''):(t.qty.once||'');
+      const val=t.target?(actual===''?t.target:parseInt(actual,10)):0;
+      if(t.target){if(t.type==='daily')t.qty[today]=val;else t.qty.once=val;}
+      t.doneDates.push(today);
+      const now=new Date();
+      S.completed.unshift({id:uid(),taskId:t.id,name:t.name,date:today,
+        time:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+        expPct:t.expPct,actual:val,target:t.target,content:t.content});
+      addExp(t.expPct,'任務完成');
+    }
+    save();renderTasks();renderDone();
+  }
+  if(act==='del'){
+    if(confirm('確定刪除任務「'+t.name+'」？已完成紀錄會保留。')){
+      S.tasks=S.tasks.filter(x=>x.id!==t.id);save();renderTasks();
+    }
+  }
+  if(act==='edit'){openModal(taskForm(t),m=>mountTaskForm(m,t));}
+});
+document.getElementById('taskList').addEventListener('change',e=>{
+  const el=e.target.closest('[data-act]');if(!el||el.tagName!=='INPUT')return;
+  const card=e.target.closest('.card');const t=S.tasks.find(x=>x.id===card.dataset.id);if(!t)return;
+  const a=el.dataset.act,today=todayStr();
+  if(a==='qty'){const v=Math.max(0,parseInt(el.value||'0',10)||0);if(t.type==='daily')t.qty[today]=v;else t.qty.once=v;renderTasks();}
+  if(a==='reason')t.reason=el.value;
+  if(a==='progress')t.progress=el.value;
+  save();
+});
+document.getElementById('addTask').onclick=()=>openModal(taskForm(null),m=>mountTaskForm(m,null));
+function hasSample(){
+  return S.tasks.some(x=>x.sample)||S.lessons.some(x=>x.sample)||S.notes.some(x=>x.sample)||
+    S.completed.some(x=>x.sample)||CATS.some(c=>S.skills[c.id].some(x=>x.sample));
+}
+document.getElementById('clearSample').onclick=()=>{
+  if(!confirm('清除所有標示「範例」的示範資料？你自己新增的內容會保留。'))return;
+  S.tasks=S.tasks.filter(x=>!x.sample);S.lessons=S.lessons.filter(x=>!x.sample);
+  S.notes=S.notes.filter(x=>!x.sample);S.completed=S.completed.filter(x=>!x.sample);
+  CATS.forEach(c=>{S.skills[c.id]=S.skills[c.id].filter(x=>!x.sample);});
+  save();renderAll();toast('範例資料已清除');
+};
+function renderAll(){
+  renderTasks();renderLessons();renderSkills();renderNotes();renderDone();
+  document.getElementById('clearSample').style.display=hasSample()?'':'none';
+}
+
+/* ========================================================================
+   LESSONS  (+10% each)
+======================================================================== */
+function lessonForm(){
+  return `
+  <h3>新增經驗教訓</h3>
+  <div class="f"><label>學到了什麼 <span class="req">＊必填</span></label>
+    <textarea id="lText" placeholder="這次的事情教了我什麼？下次要怎麼做？"></textarea></div>
+  <div class="two">
+    <div class="f"><label>學到教訓的日期</label><input type="date" id="lDate" value="${todayStr()}"></div>
+    <div class="f"><label>來源</label><input id="lSrc" maxlength="40" placeholder="例：B 案帶看後檢討 / 店長會議"></div>
+  </div>
+  <div class="err" id="lErr"></div>
+  <div class="modal-foot">
+    <button class="btn ghost" data-act="close">取消</button>
+    <button class="btn alt" id="lSave">記下來（＋10% EXP）</button>
+  </div>`;
+}
+document.getElementById('addLesson').onclick=()=>openModal(lessonForm(),m=>{
+  m.querySelector('[data-act="close"]').onclick=closeModal;
+  m.querySelector('#lSave').onclick=()=>{
+    const text=m.querySelector('#lText').value.trim();
+    if(!text){m.querySelector('#lErr').textContent='請輸入經驗教訓的內容。';return;}
+    S.lessons.unshift({id:uid(),text,date:m.querySelector('#lDate').value||todayStr(),source:m.querySelector('#lSrc').value.trim()});
+    save();closeModal();renderLessons();addExp(10,'經驗教訓');
+  };
+});
+function renderLessons(){
+  const w=document.getElementById('lessonList');
+  if(!S.lessons.length){
+    w.innerHTML='<div class="empty"><span class="big">NO RECORD</span>每一次挫折都是掉落物。記下來，直接 ＋10% 經驗值。</div>';return;
+  }
+  w.innerHTML=S.lessons.map(l=>`
+    <div class="card" data-id="${l.id}">
+      <div class="metarow">
+        <span class="chip sky">${esc(l.date||'—')}</span>
+        ${l.source?`<span class="chip gold">來源：${esc(l.source)}</span>`:''}
+        <span class="chip plum">＋10% EXP</span>
+        ${l.sample?'<span class="chip sample">範例</span>':''}
+      </div>
+      <div class="desc">${esc(l.text)}</div>
+      <div class="cardfoot"><button class="btn sm danger" data-act="del">刪除</button></div>
+    </div>`).join('');
+}
+document.getElementById('lessonList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act="del"]');if(!b)return;
+  const id=e.target.closest('.card').dataset.id;
+  if(confirm('刪除這則經驗教訓？會扣回 10% 經驗值。')){
+    S.lessons=S.lessons.filter(x=>x.id!==id);save();renderLessons();addExp(-10);
+  }
+});
+
+/* ========================================================================
+   SKILLS
+======================================================================== */
+function renderSkills(){
+  const tabs=document.getElementById('skillTabs');
+  tabs.innerHTML=CATS.map(c=>
+    `<button class="stab ${skillCat===c.id?'on':''}" data-c="${c.id}">${c.name}<span class="n">${S.skills[c.id].length} SKILLS</span></button>`).join('');
+  document.getElementById('skillTag').textContent=Object.values(S.skills).reduce((a,b)=>a+b.length,0)+' SKILLS';
+  const list=S.skills[skillCat],w=document.getElementById('skillList');
+  if(!list.length){
+    w.innerHTML='<div class="empty"><span class="big">EMPTY SLOT</span>這個分類還沒有技能。按「＋ 新增技能」把會的東西寫成招式。</div>';return;
+  }
+  w.innerHTML=list.map(s=>`
+    <div class="card" data-id="${s.id}">
+      <div class="card-title"><div class="t">${esc(s.name)}</div>
+        <div class="metarow"><span class="chip plum">${esc(CATS.find(c=>c.id===skillCat).name)}</span>${s.sample?'<span class="chip sample">範例</span>':''}</div>
+      </div>
+      ${s.desc?`<div class="kv"><span class="k">技能說明</span><span class="v desc">${esc(s.desc)}</span></div>`:''}
+      ${s.note?`<div class="kv"><span class="k">注意事項</span><span class="v desc">${esc(s.note)}</span></div>`:''}
+      ${s.from?`<div class="kv"><span class="k">學習來源</span><span class="v desc">${esc(s.from)}</span></div>`:''}
+      <div class="cardfoot">
+        <button class="btn sm ghost" data-act="edit">編輯</button>
+        <button class="btn sm danger" data-act="del">刪除</button>
+      </div>
+    </div>`).join('');
+}
+function skillForm(edit){
+  const s=edit||{name:'',desc:'',note:'',from:''};
+  return `
+  <h3>${edit?'編輯技能':'新增技能'}</h3>
+  <div class="f"><label>分類</label>
+    <select id="sCat">${CATS.map(c=>`<option value="${c.id}" ${skillCat===c.id?'selected':''}>${c.name}</option>`).join('')}</select></div>
+  <div class="f"><label>技能名稱 <span class="req">＊必填</span></label>
+    <input id="sName" maxlength="30" value="${esc(s.name)}" placeholder="例：謄本速讀"></div>
+  <div class="f"><label>技能說明</label><textarea id="sDesc" placeholder="這個技能怎麼用？">${esc(s.desc)}</textarea></div>
+  <div class="f"><label>注意事項</label><textarea id="sNote" placeholder="容易踩雷的地方">${esc(s.note)}</textarea></div>
+  <div class="f"><label>從何學習來的</label><input id="sFrom" maxlength="40" value="${esc(s.from)}" placeholder="例：店長教學 / 實戰案例"></div>
+  <div class="err" id="sErr"></div>
+  <div class="modal-foot">
+    <button class="btn ghost" data-act="close">取消</button>
+    <button class="btn ghost" id="sSave" style="background:var(--plum);color:#1a0530;border-color:#7b3ab5">${edit?'儲存變更':'學會技能'}</button>
+  </div>`;
+}
+document.getElementById('addSkill').onclick=()=>openModal(skillForm(null),m=>mountSkill(m,null));
+function mountSkill(m,edit){
+  m.querySelector('[data-act="close"]').onclick=closeModal;
+  m.querySelector('#sSave').onclick=()=>{
+    const name=m.querySelector('#sName').value.trim();
+    if(!name){m.querySelector('#sErr').textContent='請輸入技能名稱。';return;}
+    const cat=m.querySelector('#sCat').value;
+    const data={name,desc:m.querySelector('#sDesc').value.trim(),note:m.querySelector('#sNote').value.trim(),from:m.querySelector('#sFrom').value.trim()};
+    if(edit){
+      Object.assign(edit,data);
+      if(cat!==skillCat){S.skills[skillCat]=S.skills[skillCat].filter(x=>x.id!==edit.id);S.skills[cat].push(edit);skillCat=cat;}
+    }else{S.skills[cat].unshift(Object.assign({id:uid()},data));skillCat=cat;}
+    save();closeModal();renderSkills();blip(760);
+  };
+}
+document.getElementById('skillTabs').addEventListener('click',e=>{
+  const b=e.target.closest('.stab');if(!b)return;skillCat=b.dataset.c;renderSkills();blip(560);
+});
+document.getElementById('skillList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const id=e.target.closest('.card').dataset.id;
+  const s=S.skills[skillCat].find(x=>x.id===id);if(!s)return;
+  if(b.dataset.act==='del'){
+    if(confirm('刪除技能「'+s.name+'」？')){S.skills[skillCat]=S.skills[skillCat].filter(x=>x.id!==id);save();renderSkills();}
+  }else{openModal(skillForm(s),m=>mountSkill(m,s));}
+});
+
+/* ========================================================================
+   NOTES
+======================================================================== */
+const noteWrap=document.getElementById('noteEditorWrap');
+const noteBody=document.getElementById('noteBody');
+document.getElementById('newNote').onclick=()=>{
+  editingNote=null;
+  document.getElementById('noteTitle').value='';noteBody.innerHTML='';
+  noteWrap.style.display='';document.getElementById('noteTitle').focus();
+};
+document.getElementById('cancelNote').onclick=()=>{noteWrap.style.display='none';editingNote=null;};
+document.querySelector('#v-note .toolbar').addEventListener('mousedown',e=>{
+  const b=e.target.closest('.tb[data-cmd]');if(!b)return;
+  e.preventDefault();noteBody.focus();document.execCommand(b.dataset.cmd,false,null);
+});
+document.getElementById('fsize').addEventListener('change',e=>{
+  noteBody.focus();document.execCommand('fontSize',false,e.target.value);
+});
+document.getElementById('fcolor').addEventListener('change',e=>{
+  noteBody.focus();document.execCommand('foreColor',false,e.target.value);
+});
+document.getElementById('saveNote').onclick=()=>{
+  const title=document.getElementById('noteTitle').value.trim();
+  const html=cleanHTML(noteBody.innerHTML);
+  if(!title&&!noteBody.textContent.trim()){toast('標題或內文至少要填一項');return;}
+  if(editingNote){editingNote.title=title||'（無標題）';editingNote.html=html;}
+  else S.notes.unshift({id:uid(),title:title||'（無標題）',html,ts:Date.now()});
+  save();noteWrap.style.display='none';editingNote=null;renderNotes();blip(700);toast('記事已儲存');
+};
+function renderNotes(){
+  document.getElementById('noteTag').textContent=S.notes.length+' NOTES';
+  const w=document.getElementById('noteList');
+  if(!S.notes.length){
+    w.innerHTML='<div class="empty"><span class="big">NO NOTE</span>還沒有記事。按「＋ 新增記事」寫下第一頁。</div>';return;
+  }
+  w.innerHTML=S.notes.map(n=>`
+    <div class="card note" data-id="${n.id}">
+      <div class="card-title"><div class="t">${esc(n.title)}</div>
+        <div class="metarow"><span class="chip sky">${new Date(n.ts).toLocaleString('zh-TW',{hour12:false}).slice(0,16)}</span>${n.sample?'<span class="chip sample">範例</span>':''}</div>
+      </div>
+      <div class="body">${cleanHTML(n.html)}</div>
+      <div class="cardfoot">
+        <button class="btn sm ghost" data-act="edit">編輯</button>
+        <button class="btn sm danger" data-act="del">刪除</button>
+      </div>
+    </div>`).join('');
+}
+document.getElementById('noteList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const id=e.target.closest('.card').dataset.id;const n=S.notes.find(x=>x.id===id);if(!n)return;
+  if(b.dataset.act==='del'){
+    if(confirm('刪除記事「'+n.title+'」？')){S.notes=S.notes.filter(x=>x.id!==id);save();renderNotes();}
+  }else{
+    editingNote=n;document.getElementById('noteTitle').value=n.title;noteBody.innerHTML=cleanHTML(n.html);
+    noteWrap.style.display='';document.getElementById('noteTitle').focus();
+    noteWrap.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+});
+
+/* ========================================================================
+   COMPLETED  (calendar)
+======================================================================== */
+function renderDone(){
+  document.getElementById('doneTag').textContent=S.completed.length+' CLEARED';
+  const by={};S.completed.forEach(r=>{by[r.date]=(by[r.date]||0)+1;});
+  const days=Object.keys(by).length;
+  const expSum=S.completed.reduce((a,b)=>a+(b.expPct||0),0);
+  document.getElementById('doneStats').innerHTML=`
+    <div class="stat"><span class="v tab-num">${S.completed.length}</span><span class="k">累計完成任務</span></div>
+    <div class="stat"><span class="v tab-num">${days}</span><span class="k">出勤天數</span></div>
+    <div class="stat"><span class="v tab-num">${expSum}%</span><span class="k">任務累積經驗</span></div>
+    <div class="stat"><span class="v tab-num">${by[todayStr()]||0}</span><span class="k">今日完成</span></div>`;
+
+  const y=calRef.getFullYear(),mo=calRef.getMonth();
+  document.getElementById('calM').textContent=y+' / '+String(mo+1).padStart(2,'0');
+  const first=new Date(y,mo,1).getDay(),last=new Date(y,mo+1,0).getDate();
+  let h=['日','一','二','三','四','五','六'].map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++)h+='<div class="day blank"></div>';
+  for(let d=1;d<=last;d++){
+    const ds=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const c=by[ds]||0;
+    h+=`<div class="day ${c?'has':''} ${ds===todayStr()?'today':''} ${ds===selDay?'sel':''}" data-d="${ds}">
+      <span class="d tab-num">${d}</span>${c?`<span class="cnt tab-num">${c}</span>`:''}</div>`;
+  }
+  document.getElementById('cal').innerHTML=h;
+  renderDayList();
+}
+function renderDayList(){
+  const recs=S.completed.filter(r=>r.date===selDay);
+  const w=document.getElementById('dayList');
+  const head=`<h4>${selDay}　完成 ${recs.length} 項</h4>`;
+  if(!recs.length){w.innerHTML=head+'<div class="empty">這天沒有完成紀錄。點上方有數字的日期看看其他天。</div>';return;}
+  w.innerHTML=head+'<div class="list">'+recs.map(r=>`
+    <div class="rec">
+      <div class="card-title"><div class="t">${esc(r.name)}</div></div>
+      <div class="metarow">
+        <span class="chip sky">${esc(r.time||'')}</span>
+        <span class="chip gold">EXP ＋${r.expPct}%</span>
+        ${r.target?`<span class="chip plum">達成 ${r.actual} / ${r.target}</span>`:''}
+      </div>
+      ${r.content?`<div class="desc">${esc(r.content)}</div>`:''}
+    </div>`).join('')+'</div>';
+}
+document.getElementById('cal').addEventListener('click',e=>{
+  const d=e.target.closest('.day');if(!d||!d.dataset.d)return;
+  selDay=d.dataset.d;renderDone();blip(600);
+});
+document.getElementById('prevM').onclick=()=>{calRef=new Date(calRef.getFullYear(),calRef.getMonth()-1,1);renderDone();};
+document.getElementById('nextM').onclick=()=>{calRef=new Date(calRef.getFullYear(),calRef.getMonth()+1,1);renderDone();};
+
+/* ========================================================================
+   NAV + BOOT
+======================================================================== */
+document.querySelector('.bar-inner').addEventListener('click',e=>{
+  const b=e.target.closest('.nav');if(!b)return;
+  document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+b.dataset.v));
+  paintNavIcons();window.scrollTo({top:0,behavior:'instant'});blip(520);
+});
+document.getElementById('pname').addEventListener('input',e=>{
+  S.player.name=e.target.value;save();
+});
+document.getElementById('seBtn').onclick=e=>{
+  sound=!sound;e.target.dataset.on=sound?'1':'0';e.target.textContent=sound?'SE ON':'SE OFF';if(sound)blip(880);
+};
+
+S=load();
+document.getElementById('pname').value=S.player.name||'';
+if(S.completed.length&&!S.completed.some(r=>r.date===todayStr())){
+  const latest=S.completed.map(r=>r.date).sort().pop();
+  selDay=latest;calRef=new Date(latest+'T00:00');
+}
+paintAvatar();paintNavIcons();renderHUD();renderAll();
+</script>
+</body>
+</html>
